@@ -22,7 +22,6 @@ import {
   PieChart,
   Target,
   Sparkles,
-  Smartphone,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -51,7 +50,6 @@ import { ExpenseModal } from '@/components/ExpenseModal';
 import { CategoryManagerModal } from '@/components/CategoryManagerModal';
 import { MobileExpenseCard } from '@/components/MobileExpenseCard';
 import { MobileBottomNav, MobileTab } from '@/components/MobileBottomNav';
-import { InstallAppBanner } from '@/components/InstallAppBanner';
 
 // Storage keys
 const STORAGE_ENTRIES = 'cost-entries-v1';
@@ -513,17 +511,7 @@ export default function CostTrackerDashboard() {
           </div>
 
           {/* User Profile & Quick Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('open-install-guide'))}
-              className="flex items-center gap-1 rounded-xl border border-teal-200 bg-teal-50 px-2 sm:px-2.5 py-1 text-xs font-bold text-teal-800 shadow-xs hover:bg-teal-100 transition active:scale-95"
-              title="Install App"
-            >
-              <Smartphone size={14} className="text-teal-700" />
-              <span>Install</span>
-            </button>
-
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setIsCategoryModalOpen(true)}
@@ -555,9 +543,6 @@ export default function CostTrackerDashboard() {
 
       {/* Main Container */}
       <main className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
-        {/* PWA Mobile App Installation Prompt */}
-        <InstallAppBanner />
-
         {/* Month Selector Bar & Desktop Action Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white p-3 sm:p-4 shadow-xs">
           {/* Month & Year Navigation */}
