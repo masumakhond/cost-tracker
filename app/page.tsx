@@ -123,10 +123,67 @@ export default function CostTrackerDashboard() {
       .catch(() => undefined);
   }, []);
 
+  // Core Cloud Fetcher
+  const fetchCloudData = async () => {
+    if (!isCloudEnabled || !supabase) return;
+    try {
+      // 1. Fetch Expenses
+      const { data, error } = await supabase
+        .from('expense_entries')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (!error && data) {
+        const formatted: ExpenseEntry[] = data.map((item: any) => ({
+          id: String(item.id),
+          monthId: String(item.month_id),
+          date: String(item.date).slice(0, 10),
+          title: String(item.title),
+          amount: Number(item.amount) || 0,
+          category: String(item.category),
+          spentBy: item.spent_by as SpenderType,
+          paymentMethod: item.payment_method as PaymentMethodType,
+          note: String(item.note || ''),
+          isRecurring: Boolean(item.is_recurring),
+        }));
+        setEntries(formatted);
+        localStorage.setItem(STORAGE_ENTRIES, JSON.stringify(formatted));
+        setUsingLocalFallback(false);
+      }
+
+      // 2. Fetch Budgets
+      const { data: budgetData } = await supabase.from('monthly_budgets').select('*');
+      if (budgetData && budgetData.length > 0) {
+        const budgetMap: Record<string, number> = {};
+        budgetData.forEach((b: any) => {
+          budgetMap[b.month_id] = Number(b.limit_amount);
+        });
+        setBudgets((prev) => ({ ...prev, ...budgetMap }));
+        localStorage.setItem(STORAGE_BUDGETS, JSON.stringify(budgetMap));
+      }
+
+      // 3. Fetch Categories
+      const { data: catData } = await supabase.from('expense_categories').select('*');
+      if (catData && catData.length > 0) {
+        const formattedCats: ExpenseCategory[] = catData.map((c: any) => ({
+          id: c.id,
+          label: c.label,
+          color: c.color,
+          icon: c.icon || 'Tag',
+          isCustom: Boolean(c.is_custom),
+        }));
+        setCategories(formattedCats);
+        localStorage.setItem(STORAGE_CATEGORIES, JSON.stringify(formattedCats));
+      }
+    } catch (err) {
+      console.error('Cloud fetch failed, using local storage', err);
+    }
+  };
+
   // Initialize Data
   useEffect(() => {
     const initData = async () => {
-      // Load Categories
+      // Load Categories from local first
       const savedCats = localStorage.getItem(STORAGE_CATEGORIES);
       if (savedCats) {
         try {
@@ -134,7 +191,7 @@ export default function CostTrackerDashboard() {
         } catch {}
       }
 
-      // Load Budgets
+      // Load Budgets from local first
       const savedBudgets = localStorage.getItem(STORAGE_BUDGETS);
       if (savedBudgets) {
         try {
@@ -145,7 +202,11 @@ export default function CostTrackerDashboard() {
       // Check cloud or local storage
       if (isCloudEnabled && supabase) {
         try {
-          const { data, error } = await supabase.from('expense_entries').select('*');
+          const { data, error } = await supabase
+            .from('expense_entries')
+            .select('*')
+            .order('date', { ascending: false });
+
           if (!error && data) {
             const formatted: ExpenseEntry[] = data.map((item: any) => ({
               id: String(item.id),
@@ -161,7 +222,11 @@ export default function CostTrackerDashboard() {
             }));
             setEntries(formatted);
             localStorage.setItem(STORAGE_ENTRIES, JSON.stringify(formatted));
+            setUsingLocalFallback(false);
             setIsLoaded(true);
+
+            // Fetch other cloud records
+            fetchCloudData();
             return;
           }
         } catch (err) {
@@ -194,6 +259,46 @@ export default function CostTrackerDashboard() {
     };
 
     initData();
+  }, []);
+
+  // Set up Supabase Realtime channel for instant cross-device sync
+  useEffect(() => {
+    if (!isCloudEnabled || !supabase) return;
+
+    const channel = supabase
+      .channel('cost-tracker-live-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'expense_entries' },
+        () => {
+          fetchCloudData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'monthly_budgets' },
+        () => {
+          fetchCloudData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'expense_categories' },
+        () => {
+          fetchCloudData();
+        }
+      )
+      .subscribe();
+
+    const handleFocus = () => {
+      fetchCloudData();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   // Persist entries locally
@@ -313,23 +418,44 @@ export default function CostTrackerDashboard() {
   };
 
   // Update Budget
-  const handleUpdateBudget = (newLimit: number) => {
+  const handleUpdateBudget = async (newLimit: number) => {
     const updated = { ...budgets, [currentMonthId]: newLimit };
     setBudgets(updated);
     localStorage.setItem(STORAGE_BUDGETS, JSON.stringify(updated));
+
+    if (isCloudEnabled && supabase) {
+      await supabase.from('monthly_budgets').upsert({
+        month_id: currentMonthId,
+        limit_amount: newLimit,
+      });
+    }
   };
 
   // Category Management
-  const handleAddCategory = (newCat: ExpenseCategory) => {
+  const handleAddCategory = async (newCat: ExpenseCategory) => {
     const updated = [...categories, newCat];
     setCategories(updated);
     localStorage.setItem(STORAGE_CATEGORIES, JSON.stringify(updated));
+
+    if (isCloudEnabled && supabase) {
+      await supabase.from('expense_categories').upsert({
+        id: newCat.id,
+        label: newCat.label,
+        color: newCat.color,
+        icon: newCat.icon,
+        is_custom: newCat.isCustom,
+      });
+    }
   };
 
-  const handleDeleteCategory = (catId: string) => {
+  const handleDeleteCategory = async (catId: string) => {
     const updated = categories.filter((c) => c.id !== catId);
     setCategories(updated);
     localStorage.setItem(STORAGE_CATEGORIES, JSON.stringify(updated));
+
+    if (isCloudEnabled && supabase) {
+      await supabase.from('expense_categories').delete().eq('id', catId);
+    }
   };
 
   const handleLogout = async () => {
@@ -364,9 +490,16 @@ export default function CostTrackerDashboard() {
                 <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
                   Cost Tracker
                 </h1>
-                <span className="hidden xs:inline rounded-full bg-teal-100 px-2 py-0.2 text-[9px] font-bold text-teal-800">
-                  Ledger
-                </span>
+                {isCloudEnabled && !usingLocalFallback ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[9px] font-bold text-emerald-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Cloud Synced
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[9px] font-bold text-amber-700">
+                    Local Only
+                  </span>
+                )}
               </div>
               <p className="text-[10px] sm:text-[11px] font-medium text-slate-400">
                 Masum & Toyeeba • {monthLabel(currentMonthId)}
