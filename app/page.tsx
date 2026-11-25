@@ -10,16 +10,18 @@ import {
   Filter,
   Trash2,
   Edit2,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
-  TrendingDown,
-  Users,
   Wallet,
-  Sparkles,
   Database,
   SlidersHorizontal,
+  LayoutGrid,
+  List,
+  Receipt,
+  PieChart,
+  Target,
+  Sparkles,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -46,6 +48,8 @@ import { BudgetCard } from '@/components/BudgetCard';
 import { CategoryBreakdownChart } from '@/components/CategoryBreakdownChart';
 import { ExpenseModal } from '@/components/ExpenseModal';
 import { CategoryManagerModal } from '@/components/CategoryManagerModal';
+import { MobileExpenseCard } from '@/components/MobileExpenseCard';
+import { MobileBottomNav, MobileTab } from '@/components/MobileBottomNav';
 
 // Storage keys
 const STORAGE_ENTRIES = 'cost-entries-v1';
@@ -80,6 +84,10 @@ export default function CostTrackerDashboard() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [usingLocalFallback, setUsingLocalFallback] = useState(!isCloudEnabled);
 
+  // Mobile navigation & view states
+  const [mobileTab, setMobileTab] = useState<MobileTab>('expenses');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -91,6 +99,18 @@ export default function CostTrackerDashboard() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   const currentMonthId = `${selectedYear}-${selectedMonth}`;
+
+  // Automatically adapt view mode on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setViewMode('cards');
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Load user session
   useEffect(() => {
@@ -206,10 +226,12 @@ export default function CostTrackerDashboard() {
 
   // Current Month Entries
   const monthEntries = useMemo(() => {
-    return entries.filter((e) => e.monthId === currentMonthId || (e.date || '').startsWith(currentMonthId));
+    return entries.filter(
+      (e) => e.monthId === currentMonthId || (e.date || '').startsWith(currentMonthId)
+    );
   }, [entries, currentMonthId]);
 
-  // Filtered entries for table
+  // Filtered entries for table/cards
   const displayedEntries = useMemo(() => {
     return monthEntries.filter((e) => {
       const matchSearch =
@@ -224,13 +246,18 @@ export default function CostTrackerDashboard() {
 
   // Calculations
   const spenderSummary = useMemo(() => buildSpenderSummary(monthEntries), [monthEntries]);
-  const categorySummary = useMemo(() => buildCategorySummary(monthEntries, categories), [monthEntries, categories]);
+  const categorySummary = useMemo(
+    () => buildCategorySummary(monthEntries, categories),
+    [monthEntries, categories]
+  );
   const currentBudget = budgets[currentMonthId] || 50000;
 
   // Add / Edit Entry
   const handleSaveExpense = async (data: Omit<ExpenseEntry, 'id'>) => {
     if (editingExpense) {
-      const updated = entries.map((e) => (e.id === editingExpense.id ? { ...data, id: editingExpense.id } : e));
+      const updated = entries.map((e) =>
+        e.id === editingExpense.id ? { ...data, id: editingExpense.id } : e
+      );
       persistEntries(updated);
 
       if (isCloudEnabled && supabase) {
@@ -323,50 +350,52 @@ export default function CostTrackerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-16">
-      {/* Top Navbar */}
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-28 sm:pb-16">
+      {/* Top Mobile-Friendly Navbar */}
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-600 to-cyan-500 text-white shadow-md shadow-teal-500/20">
-              <CreditCard size={22} />
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3.5 py-3 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-600 to-cyan-500 text-white shadow-md shadow-teal-500/20">
+              <CreditCard size={20} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black tracking-tight text-slate-900">Cost Tracker</h1>
-                <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-800">
-                  Dynamic Ledger
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
+                  Cost Tracker
+                </h1>
+                <span className="hidden xs:inline rounded-full bg-teal-100 px-2 py-0.2 text-[9px] font-bold text-teal-800">
+                  Ledger
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-slate-400">
+              <p className="text-[10px] sm:text-[11px] font-medium text-slate-400">
                 Masum & Toyeeba • {monthLabel(currentMonthId)}
               </p>
             </div>
           </div>
 
-          {/* User Profile & Actions */}
-          <div className="flex items-center gap-2.5">
+          {/* User Profile & Quick Actions */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setIsCategoryModalOpen(true)}
               className="hidden sm:flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition"
-              title="Customize expense categories"
+              title="Customize categories"
             >
               <SlidersHorizontal size={14} className="text-teal-600" />
               <span>Categories</span>
             </button>
 
-            <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white">
                 {userName.charAt(0)}
               </span>
-              <span>{userName}</span>
+              <span className="hidden xs:inline">{userName}</span>
             </div>
 
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
+              className="rounded-xl p-1.5 sm:p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition active:scale-90"
               title="Sign Out"
             >
               <LogOut size={16} />
@@ -375,57 +404,59 @@ export default function CostTrackerDashboard() {
         </div>
       </header>
 
-      {/* Main Content Dashboard */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 space-y-6">
-        {/* Month Selector Bar & Action Buttons */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs">
+      {/* Main Container */}
+      <main className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Month Selector Bar & Desktop Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white p-3 sm:p-4 shadow-xs">
           {/* Month & Year Navigation */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 transition"
+              className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95 transition"
               title="Previous Month"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={20} />
             </button>
 
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800 outline-none focus:border-teal-500 focus:bg-white"
-            >
-              {MONTHS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1.5">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 sm:px-3 py-2 text-sm font-bold text-slate-800 outline-none focus:border-teal-500 focus:bg-white"
+              >
+                {MONTHS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
 
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800 outline-none focus:border-teal-500 focus:bg-white"
-            >
-              {YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 sm:px-3 py-2 text-sm font-bold text-slate-800 outline-none focus:border-teal-500 focus:bg-white"
+              >
+                {YEARS.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <button
               type="button"
               onClick={handleNextMonth}
-              className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 transition"
+              className="flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95 transition"
               title="Next Month"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={20} />
             </button>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Desktop Actions Row */}
+          <div className="hidden sm:flex items-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -460,92 +491,93 @@ export default function CostTrackerDashboard() {
           </div>
         </div>
 
-        {/* Sync Mode Notification Banner */}
+        {/* Sync Mode Banner */}
         {usingLocalFallback && (
-          <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs text-amber-900">
+          <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900">
             <div className="flex items-center gap-2">
-              <Database size={16} className="text-amber-600 flex-shrink-0" />
-              <span>
-                <strong>Local Storage Mode:</strong> Expenses are securely saved in browser memory. To enable live cloud sync, connect your Supabase credentials in <code>.env.local</code>.
+              <Database size={15} className="text-amber-600 flex-shrink-0" />
+              <span className="text-[11px] sm:text-xs">
+                <strong>Local Storage Active:</strong> All changes save instantly on this phone.
               </span>
             </div>
             <span className="rounded-md bg-amber-200 px-2 py-0.5 font-bold text-amber-800 text-[10px]">
-              Offline Ready
+              Offline
             </span>
           </div>
         )}
 
-        {/* Summary Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 2x2 Metric Cards Grid for Mobile & Desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {/* Card 1: Total Spent */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-5 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">
                 Total Expenses
               </span>
-              <div className="rounded-xl bg-teal-50 p-2 text-teal-600">
-                <Wallet size={18} />
+              <div className="rounded-xl bg-teal-50 p-1.5 sm:p-2 text-teal-600">
+                <Wallet size={16} />
               </div>
             </div>
-            <p className="mt-2 text-2xl font-black text-slate-900">
+            <p className="mt-1.5 sm:mt-2 text-lg sm:text-2xl font-black text-slate-900 leading-tight">
               {formatAmount(spenderSummary.total)}
             </p>
-            <p className="mt-1 text-xs text-slate-400">
-              {monthEntries.length} items logged in {monthLabel(currentMonthId)}
+            <p className="mt-0.5 text-[10px] sm:text-xs text-slate-400">
+              {monthEntries.length} items logged
             </p>
           </div>
 
           {/* Card 2: Masum's Share */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-5 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Masum's Expenses
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">
+                Masum
               </span>
-              <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-800">
+              <span className="rounded-full bg-teal-100 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-teal-800">
                 {spenderSummary.total > 0 ? Math.round((spenderSummary.masum / spenderSummary.total) * 100) : 0}%
               </span>
             </div>
-            <p className="mt-2 text-2xl font-black text-slate-900">
+            <p className="mt-1.5 sm:mt-2 text-lg sm:text-2xl font-black text-slate-900 leading-tight">
               {formatAmount(spenderSummary.masum)}
             </p>
-            <p className="mt-1 text-xs text-slate-400">Paid directly by Masum</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs text-slate-400">Masum paid</p>
           </div>
 
           {/* Card 3: Toyeeba's Share */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-5 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Toyeeba's Expenses
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">
+                Toyeeba
               </span>
-              <span className="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-800">
+              <span className="rounded-full bg-pink-100 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-pink-800">
                 {spenderSummary.total > 0 ? Math.round((spenderSummary.toyeeba / spenderSummary.total) * 100) : 0}%
               </span>
             </div>
-            <p className="mt-2 text-2xl font-black text-slate-900">
+            <p className="mt-1.5 sm:mt-2 text-lg sm:text-2xl font-black text-slate-900 leading-tight">
               {formatAmount(spenderSummary.toyeeba)}
             </p>
-            <p className="mt-1 text-xs text-slate-400">Paid directly by Toyeeba</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs text-slate-400">Toyeeba paid</p>
           </div>
 
           {/* Card 4: Shared Household */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-5 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Shared Household
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">
+                Shared
               </span>
-              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-800">
+              <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-indigo-800">
                 {spenderSummary.total > 0 ? Math.round((spenderSummary.shared / spenderSummary.total) * 100) : 0}%
               </span>
             </div>
-            <p className="mt-2 text-2xl font-black text-slate-900">
+            <p className="mt-1.5 sm:mt-2 text-lg sm:text-2xl font-black text-slate-900 leading-tight">
               {formatAmount(spenderSummary.shared)}
             </p>
-            <p className="mt-1 text-xs text-slate-400">Joint family expenses</p>
+            <p className="mt-0.5 text-[10px] sm:text-xs text-slate-400">Joint family</p>
           </div>
         </div>
 
-        {/* Budget & Analytics Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Content Body Based on Mobile Tab or Desktop View */}
+        {/* On desktop (sm/md/lg), show Budget & Charts side-by-side */}
+        <div className="hidden sm:grid sm:grid-cols-2 gap-6">
           <BudgetCard
             totalSpent={spenderSummary.total}
             budgetLimit={currentBudget}
@@ -554,157 +586,382 @@ export default function CostTrackerDashboard() {
           <CategoryBreakdownChart categories={categorySummary} />
         </div>
 
-        {/* Expense Ledger Table Card */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
-          {/* Table Search & Filter Bar */}
-          <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-sm">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search expenses by title or note..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-800 outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
+        {/* Mobile View: Tab Content Switcher */}
+        <div className="sm:hidden">
+          {mobileTab === 'budget' && (
+            <div className="space-y-4">
+              <BudgetCard
+                totalSpent={spenderSummary.total}
+                budgetLimit={currentBudget}
+                onUpdateBudget={handleUpdateBudget}
               />
             </div>
+          )}
 
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Category Filter */}
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500"
-              >
-                <option value="all">All Categories</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-
-              {/* Spender Filter */}
-              <select
-                value={filterSpender}
-                onChange={(e) => setFilterSpender(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500"
-              >
-                <option value="all">All Spenders</option>
-                <option value="Masum">Masum</option>
-                <option value="Toyeeba">Toyeeba</option>
-                <option value="Shared">Shared</option>
-              </select>
+          {mobileTab === 'analytics' && (
+            <div className="space-y-4">
+              <CategoryBreakdownChart categories={categorySummary} />
             </div>
-          </div>
+          )}
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-100">
-                <tr>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Expense Title</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Spender</th>
-                  <th className="py-3 px-4">Method</th>
-                  <th className="py-3 px-4 text-right">Amount</th>
-                  <th className="py-3 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {displayedEntries.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
-                      No matching expense entries found for this month.
-                    </td>
-                  </tr>
-                ) : (
-                  displayedEntries.map((entry) => {
-                    const cat = catMap.get(entry.category) || {
-                      label: entry.category,
-                      color: '#64748b',
-                    };
+          {mobileTab === 'categories' && (
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 text-center space-y-3">
+              <div className="h-12 w-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto">
+                <SlidersHorizontal size={24} />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">Custom Categories</h3>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                Add, customize, and edit expense categories according to your family needs.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(true)}
+                className="rounded-2xl bg-teal-600 px-5 py-3 text-xs font-bold text-white shadow-md shadow-teal-600/30 hover:bg-teal-700 active:scale-95 transition"
+              >
+                Open Category Manager
+              </button>
+            </div>
+          )}
 
-                    return (
-                      <tr key={entry.id} className="hover:bg-slate-50/60 transition">
-                        <td className="py-3 px-4 font-mono text-slate-500 whitespace-nowrap">
-                          {entry.date}
-                        </td>
-                        <td className="py-3 px-4">
-                          <p className="font-bold text-slate-900">{entry.title}</p>
-                          {entry.note && (
-                            <p className="text-[11px] text-slate-400 truncate max-w-xs">{entry.note}</p>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <span
-                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                            style={{
-                              backgroundColor: `${cat.color}15`,
-                              color: cat.color,
-                            }}
-                          >
-                            <span
-                              className="h-2 w-2 rounded-full"
-                              style={{ backgroundColor: cat.color }}
-                            />
-                            <span>{cat.label.split('(')[0].trim()}</span>
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <span
-                            className={`rounded-lg px-2 py-0.5 text-[11px] font-bold ${
-                              entry.spentBy === 'Masum'
-                                ? 'bg-teal-50 text-teal-700'
-                                : entry.spentBy === 'Toyeeba'
-                                ? 'bg-pink-50 text-pink-700'
-                                : 'bg-indigo-50 text-indigo-700'
-                            }`}
-                          >
-                            {entry.spentBy}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
-                          {entry.paymentMethod}
-                        </td>
-                        <td className="py-3 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
-                          {formatAmount(entry.amount)}
-                        </td>
-                        <td className="py-3 px-4 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingExpense(entry);
-                                setIsExpenseModalOpen(true);
-                              }}
-                              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
-                              title="Edit"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteExpense(entry.id)}
-                              className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
-                              title="Delete"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+          {mobileTab === 'pdf' && (
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Download Statements</h3>
+                <p className="text-xs text-slate-500">
+                  Export high-resolution PDF statements formatted for mobile and printing.
+                </p>
+              </div>
+
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => downloadMonthlyCostPdf(currentMonthId, monthEntries, categories)}
+                  disabled={monthEntries.length === 0}
+                  className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:bg-slate-100 active:scale-98 disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
+                      <Download size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">
+                        {monthLabel(currentMonthId)} Statement
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        {monthEntries.length} items • {formatAmount(spenderSummary.total)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-teal-600">Download</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => downloadAnnualCostPdf(selectedYear, entries, categories)}
+                  disabled={entries.length === 0}
+                  className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:bg-slate-100 active:scale-98 disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-100 text-cyan-700">
+                      <Calendar size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">
+                        Full Year {selectedYear} Statement
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        All 12 months comprehensive ledger
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-cyan-600">Download</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Expenses List View (Shown on Desktop always, on Mobile when on 'expenses' tab) */}
+        {(mobileTab === 'expenses' || typeof window === 'undefined') && (
+          <div className="space-y-3">
+            {/* Search, Filter Pills & View Mode Toggle */}
+            <div className="rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white p-3 sm:p-4 shadow-xs space-y-3">
+              {/* Top Search & Toggle Row */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search expenses by title or note..."
+                    className="w-full rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition"
+                  />
+                </div>
+
+                {/* View Mode Switcher (Card vs Table) */}
+                <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('cards')}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                      viewMode === 'cards'
+                        ? 'bg-white text-teal-700 shadow-xs'
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                    title="Card View (Mobile Optimized)"
+                  >
+                    <LayoutGrid size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('table')}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                      viewMode === 'table'
+                        ? 'bg-white text-teal-700 shadow-xs'
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                    title="Table View"
+                  >
+                    <List size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Horizontal Scrollable Category Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                <button
+                  type="button"
+                  onClick={() => setFilterCategory('all')}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold whitespace-nowrap transition active:scale-95 ${
+                    filterCategory === 'all'
+                      ? 'bg-teal-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  All ({monthEntries.length})
+                </button>
+                {categories.map((c) => {
+                  const count = monthEntries.filter((e) => e.category === c.id).length;
+                  if (count === 0 && filterCategory !== c.id) return null;
+                  const isSelected = filterCategory === c.id;
+                  const name = c.englishLabel || c.label.split('(')[0].trim();
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setFilterCategory(c.id)}
+                      className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold whitespace-nowrap transition active:scale-95 ${
+                        isSelected
+                          ? 'bg-teal-600 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: c.color }}
+                      />
+                      <span>{name}</span>
+                      <span className="opacity-70 text-[10px]">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Spender Segmented Filter */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-slate-100">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                  Spender:
+                </span>
+                {(['all', 'Masum', 'Toyeeba', 'Shared'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setFilterSpender(s)}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition active:scale-95 ${
+                      filterSpender === s
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {s === 'all' ? 'Everyone' : s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Expenses Display: Cards or Table */}
+            {displayedEntries.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white p-12 text-center">
+                <div className="h-12 w-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-3">
+                  <Receipt size={24} />
+                </div>
+                <h3 className="text-base font-bold text-slate-800">No expenses found</h3>
+                <p className="mt-1 text-xs text-slate-400 max-w-xs">
+                  {searchQuery || filterCategory !== 'all' || filterSpender !== 'all'
+                    ? 'Try clearing the search or category filter.'
+                    : 'Click the + button to add the first expense for this month.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingExpense(null);
+                    setIsExpenseModalOpen(true);
+                  }}
+                  className="mt-4 flex items-center gap-1.5 rounded-2xl bg-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-teal-700 active:scale-95 transition"
+                >
+                  <Plus size={16} /> Add Expense
+                </button>
+              </div>
+            ) : viewMode === 'cards' ? (
+              /* Mobile Touch Cards View */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
+                {displayedEntries.map((entry) => (
+                  <MobileExpenseCard
+                    key={entry.id}
+                    entry={entry}
+                    category={catMap.get(entry.category)}
+                    onEdit={(it) => {
+                      setEditingExpense(it);
+                      setIsExpenseModalOpen(true);
+                    }}
+                    onDelete={handleDeleteExpense}
+                  />
+                ))}
+              </div>
+            ) : (
+              /* Desktop Table View */
+              <div className="rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-100">
+                      <tr>
+                        <th className="py-3 px-4">Date</th>
+                        <th className="py-3 px-4">Expense Title</th>
+                        <th className="py-3 px-4">Category</th>
+                        <th className="py-3 px-4">Spender</th>
+                        <th className="py-3 px-4">Method</th>
+                        <th className="py-3 px-4 text-right">Amount</th>
+                        <th className="py-3 px-4 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {displayedEntries.map((entry) => {
+                        const cat = catMap.get(entry.category) || {
+                          label: entry.category,
+                          englishLabel: entry.category,
+                          color: '#64748b',
+                        };
+
+                        return (
+                          <tr key={entry.id} className="hover:bg-slate-50/60 transition">
+                            <td className="py-3 px-4 font-mono text-slate-500 whitespace-nowrap">
+                              {entry.date}
+                            </td>
+                            <td className="py-3 px-4">
+                              <p className="font-bold text-slate-900">{entry.title}</p>
+                              {entry.note && (
+                                <p className="text-[11px] text-slate-400 truncate max-w-xs">
+                                  {entry.note}
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <span
+                                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                style={{
+                                  backgroundColor: `${cat.color}15`,
+                                  color: cat.color,
+                                }}
+                              >
+                                <span
+                                  className="h-2 w-2 rounded-full"
+                                  style={{ backgroundColor: cat.color }}
+                                />
+                                <span>{cat.englishLabel || cat.label.split('(')[0].trim()}</span>
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <span
+                                className={`rounded-lg px-2 py-0.5 text-[11px] font-bold ${
+                                  entry.spentBy === 'Masum'
+                                    ? 'bg-teal-50 text-teal-700'
+                                    : entry.spentBy === 'Toyeeba'
+                                    ? 'bg-pink-50 text-pink-700'
+                                    : 'bg-indigo-50 text-indigo-700'
+                                }`}
+                              >
+                                {entry.spentBy}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                              {entry.paymentMethod}
+                            </td>
+                            <td className="py-3 px-4 text-right font-black text-slate-900 whitespace-nowrap">
+                              {formatAmount(entry.amount)}
+                            </td>
+                            <td className="py-3 px-4 text-center whitespace-nowrap">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingExpense(entry);
+                                    setIsExpenseModalOpen(true);
+                                  }}
+                                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                                  title="Edit"
+                                >
+                                  <Edit2 size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteExpense(entry.id)}
+                                  className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                                  title="Delete"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
-      {/* Expense Modal (Add / Edit) */}
+      {/* Floating Action Button (+) for instant 1-thumb add on mobile */}
+      <button
+        type="button"
+        onClick={() => {
+          setEditingExpense(null);
+          setIsExpenseModalOpen(true);
+        }}
+        className="sm:hidden fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-teal-600 text-white shadow-xl shadow-teal-600/40 transition active:scale-90"
+        title="Add Expense"
+      >
+        <Plus size={28} />
+      </button>
+
+      {/* Mobile Fixed Bottom Navigation Bar */}
+      <MobileBottomNav
+        activeTab={mobileTab}
+        onChangeTab={(tab) => {
+          if (tab === 'categories') {
+            setIsCategoryModalOpen(true);
+          } else {
+            setMobileTab(tab);
+          }
+        }}
+        expenseCount={monthEntries.length}
+      />
+
+      {/* Expense Modal (Add / Edit) with Mobile Bottom Sheet Animation */}
       <ExpenseModal
         isOpen={isExpenseModalOpen}
         onClose={() => {
@@ -728,4 +985,3 @@ export default function CostTrackerDashboard() {
     </div>
   );
 }
-
