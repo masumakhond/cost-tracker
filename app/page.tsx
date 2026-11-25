@@ -58,10 +58,14 @@ const STORAGE_BUDGETS = 'cost-budgets-v1';
 const STORAGE_CATEGORIES = 'cost-categories-v1';
 
 // Supabase configuration
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  'https://qwiecsnziofuigkrxjku.supabase.co';
+
 const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  'sb_publishable_UR3C04Tfub9_awDWH5vJWw_V4cdS9Cv';
 
 const isCloudEnabled = Boolean(
   supabaseUrl &&
