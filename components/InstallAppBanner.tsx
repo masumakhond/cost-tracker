@@ -43,14 +43,24 @@ export function InstallAppBanner() {
       setDeferredPrompt(null);
     };
 
+    const handleOpenCustom = () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+      } else {
+        setShowGuideModal(true);
+      }
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('open-install-guide', handleOpenCustom);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('open-install-guide', handleOpenCustom);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleDismiss = () => {
     setIsDismissed(true);
@@ -70,50 +80,52 @@ export function InstallAppBanner() {
     }
   };
 
-  // If already installed as PWA or dismissed, don't show the banner
-  if (isStandalone || isDismissed) {
+  // If already installed as standalone PWA, don't show prompt
+  if (isStandalone) {
     return null;
   }
 
   return (
     <>
       {/* Sleek Mobile PWA Install Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-600 via-teal-700 to-emerald-700 p-3 text-white shadow-md">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-xs">
-              <Smartphone size={22} />
+      {!isDismissed && (
+        <div className="relative overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-600 via-teal-700 to-emerald-700 p-3 text-white shadow-md">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-xs">
+                <Smartphone size={22} />
+              </div>
+              <div>
+                <p className="text-xs font-bold leading-tight tracking-wide">
+                  Install Cost Tracker App
+                </p>
+                <p className="text-[11px] text-teal-100 leading-tight mt-0.5">
+                  Add to home screen for fast 1-tap full-screen access
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-bold leading-tight tracking-wide">
-                Install Cost Tracker App
-              </p>
-              <p className="text-[11px] text-teal-100 leading-tight mt-0.5">
-                Add to your home screen for fast 1-tap access
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <button
-              type="button"
-              onClick={handleInstallClick}
-              className="flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-teal-800 shadow-sm transition hover:bg-teal-50 active:scale-95"
-            >
-              <Download size={14} className="text-teal-700" />
-              <span>Install</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleDismiss}
-              className="rounded-lg p-1 text-teal-200 hover:bg-white/10 hover:text-white transition active:scale-90"
-              title="Dismiss"
-            >
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                className="flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-teal-800 shadow-sm transition hover:bg-teal-50 active:scale-95"
+              >
+                <Download size={14} className="text-teal-700" />
+                <span>Install</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="rounded-lg p-1 text-teal-200 hover:bg-white/10 hover:text-white transition active:scale-90"
+                title="Dismiss"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Installation Instruction Modal (for iOS or browsers without native trigger) */}
       {showGuideModal && (
@@ -149,7 +161,7 @@ export function InstallAppBanner() {
                       1
                     </span>
                     <p>
-                      Tap the <strong>Share</strong> button <Share size={13} className="inline text-teal-600 mx-0.5" /> at the bottom of Safari.
+                      Tap the <strong>Share</strong> button <Share size={13} className="inline text-teal-600 mx-0.5" /> at the bottom bar of Safari.
                     </p>
                   </div>
                   <div className="flex items-start gap-2.5">
@@ -205,7 +217,7 @@ export function InstallAppBanner() {
 
             <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-teal-700 font-medium">
               <CheckCircle2 size={14} className="text-teal-600" />
-              <span>Full screen app with zero browser url bars!</span>
+              <span>Full screen app with zero browser URL bars!</span>
             </div>
 
             <button
@@ -221,4 +233,3 @@ export function InstallAppBanner() {
     </>
   );
 }
-

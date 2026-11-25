@@ -22,6 +22,7 @@ import {
   PieChart,
   Target,
   Sparkles,
+  Smartphone,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -512,7 +513,17 @@ export default function CostTrackerDashboard() {
           </div>
 
           {/* User Profile & Quick Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-install-guide'))}
+              className="flex items-center gap-1 rounded-xl border border-teal-200 bg-teal-50 px-2 sm:px-2.5 py-1 text-xs font-bold text-teal-800 shadow-xs hover:bg-teal-100 transition active:scale-95"
+              title="Install App"
+            >
+              <Smartphone size={14} className="text-teal-700" />
+              <span>Install</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setIsCategoryModalOpen(true)}
