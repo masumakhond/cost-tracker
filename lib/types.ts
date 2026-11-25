@@ -11,6 +11,7 @@ export type PaymentMethodType =
 export interface ExpenseCategory {
   id: string;
   label: string;
+  englishLabel?: string;
   color: string;
   icon: string;
   isCustom?: boolean;
@@ -47,4 +48,3 @@ export interface CategorySummary {
   count: number;
   percentage: number;
 }
-
