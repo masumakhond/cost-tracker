@@ -340,18 +340,75 @@ export default function CostTrackerDashboard() {
     );
   }, [entries, currentMonthId]);
 
-  // Filtered entries for table/cards
+  // Filtered entries for table/cards (sorted by date descending)
   const displayedEntries = useMemo(() => {
-    return monthEntries.filter((e) => {
-      const matchSearch =
-        !searchQuery.trim() ||
-        e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        e.note.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchCat = filterCategory === 'all' || e.category === filterCategory;
-      const matchSpender = filterSpender === 'all' || e.spentBy === filterSpender;
-      return matchSearch && matchCat && matchSpender;
-    });
+    return monthEntries
+      .filter((e) => {
+        const matchSearch =
+          !searchQuery.trim() ||
+          e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          e.note.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchCat = filterCategory === 'all' || e.category === filterCategory;
+        const matchSpender = filterSpender === 'all' || e.spentBy === filterSpender;
+        return matchSearch && matchCat && matchSpender;
+      })
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [monthEntries, searchQuery, filterCategory, filterSpender]);
+
+  // Helper to format date header
+  const formatDateLabel = (dateStr: string): string => {
+    try {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      if (!y || !m || !d) return dateStr;
+
+      const dateObj = new Date(y, m - 1, d);
+      const today = new Date();
+      const isToday =
+        today.getFullYear() === y &&
+        today.getMonth() === m - 1 &&
+        today.getDate() === d;
+
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const isYesterday =
+        yesterday.getFullYear() === y &&
+        yesterday.getMonth() === m - 1 &&
+        yesterday.getDate() === d;
+
+      const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+      const monthName = dateObj.toLocaleDateString('en-US', { month: 'short' });
+
+      if (isToday) {
+        return `Today • ${d} ${monthName}`;
+      }
+      if (isYesterday) {
+        return `Yesterday • ${d} ${monthName}`;
+      }
+      return `${d} ${monthName} ${y} • ${dayName}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Group displayed entries by Date for same-date rows
+  const groupedEntriesByDate = useMemo(() => {
+    const groups: Record<string, ExpenseEntry[]> = {};
+    for (const entry of displayedEntries) {
+      const d = entry.date || 'Unknown Date';
+      if (!groups[d]) {
+        groups[d] = [];
+      }
+      groups[d].push(entry);
+    }
+
+    return Object.entries(groups)
+      .map(([date, items]) => ({
+        date,
+        totalAmount: items.reduce((sum, item) => sum + item.amount, 0),
+        entries: items,
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [displayedEntries]);
 
   // Calculations
   const spenderSummary = useMemo(() => buildSpenderSummary(monthEntries), [monthEntries]);
@@ -951,19 +1008,43 @@ export default function CostTrackerDashboard() {
                 </button>
               </div>
             ) : viewMode === 'cards' ? (
-              /* Mobile Compact Cards View */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-2.5">
-                {displayedEntries.map((entry) => (
-                  <MobileExpenseCard
-                    key={entry.id}
-                    entry={entry}
-                    category={catMap.get(entry.category)}
-                    onEdit={(it) => {
-                      setEditingExpense(it);
-                      setIsExpenseModalOpen(true);
-                    }}
-                    onDelete={handleDeleteExpense}
-                  />
+              /* Mobile Compact Cards Grouped by Date Row */
+              <div className="space-y-4">
+                {groupedEntriesByDate.map((group) => (
+                  <div key={group.date} className="space-y-1.5">
+                    {/* Date Row Header: Date, Item Count & Daily Total */}
+                    <div className="flex items-center justify-between px-2 pt-1 text-xs">
+                      <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                        <Calendar size={13} className="text-teal-600" />
+                        <span>{formatDateLabel(group.date)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                        <span className="text-slate-400">
+                          {group.entries.length} {group.entries.length === 1 ? 'item' : 'items'}
+                        </span>
+                        <span>•</span>
+                        <span className="font-extrabold text-teal-800">
+                          {formatAmount(group.totalAmount)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Expenses for this date */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-2.5">
+                      {group.entries.map((entry) => (
+                        <MobileExpenseCard
+                          key={entry.id}
+                          entry={entry}
+                          category={catMap.get(entry.category)}
+                          onEdit={(it) => {
+                            setEditingExpense(it);
+                            setIsExpenseModalOpen(true);
+                          }}
+                          onDelete={handleDeleteExpense}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
