@@ -1106,6 +1106,7 @@ export default function CostTrackerDashboard() {
           setEditingExpense(null);
         }}
         onSave={handleSaveExpense}
+        onAddCategory={handleAddCategory}
         initialData={editingExpense}
         categories={categories}
         currentMonthId={currentMonthId}
