@@ -951,8 +951,8 @@ export default function CostTrackerDashboard() {
                 </button>
               </div>
             ) : viewMode === 'cards' ? (
-              /* Mobile Touch Cards View */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
+              /* Mobile Compact Cards View */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-2.5">
                 {displayedEntries.map((entry) => (
                   <MobileExpenseCard
                     key={entry.id}
