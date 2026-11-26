@@ -53,6 +53,12 @@ export function ExpenseModal({
   const [customCategoryColor, setCustomCategoryColor] = useState(COLOR_OPTIONS[0]);
 
   useEffect(() => {
+    if (!isOpen) {
+      setIsCreatingCustom(false);
+      setCustomCategoryName('');
+      return;
+    }
+
     if (initialData) {
       setTitle(initialData.title);
       setAmount(String(initialData.amount));
@@ -73,7 +79,8 @@ export function ExpenseModal({
     }
     setIsCreatingCustom(false);
     setCustomCategoryName('');
-  }, [initialData, isOpen, currentMonthId, categories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
