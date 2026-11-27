@@ -542,47 +542,53 @@ export default function CostTrackerDashboard() {
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-28 sm:pb-16">
       {/* Top Mobile-Friendly Navbar */}
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-3.5 py-3 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-600 to-cyan-500 text-white shadow-md shadow-teal-500/20">
-              <CreditCard size={20} />
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2.5 sm:px-6 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-teal-600 to-cyan-500 text-white shadow-md shadow-teal-500/20">
+              <CreditCard size={18} />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="text-sm sm:text-base font-black tracking-tight text-slate-900 truncate">
                   Cost Tracker
                 </h1>
                 {isCloudEnabled && !usingLocalFallback ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[9px] font-bold text-emerald-700">
+                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Cloud Synced
+                    <span>Cloud</span>
+                    <span className="hidden sm:inline">Synced</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[9px] font-bold text-amber-700">
-                    Local Only
+                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
+                    <span>Local</span>
+                    <span className="hidden sm:inline">Only</span>
                   </span>
                 )}
               </div>
-              <p className="text-[10px] sm:text-[11px] font-medium text-slate-400">
+              <p className="text-[10px] sm:text-[11px] font-medium text-slate-400 truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
                 Masum & Toyeeba • {monthLabel(currentMonthId)}
               </p>
             </div>
           </div>
 
           {/* User Profile & Quick Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Mode Switcher: Expenses vs Loans */}
-            <div className="flex items-center rounded-xl bg-slate-100 p-1">
-              <span className="flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-teal-800 shadow-xs">
-                <Receipt size={13} />
-                <span className="hidden xs:inline">Expenses</span>
+            <div className="flex items-center rounded-xl bg-slate-100 p-0.5 sm:p-1">
+              <span
+                className="flex items-center gap-1 sm:gap-1.5 rounded-lg bg-white px-2 sm:px-2.5 py-1 text-xs font-bold text-teal-800 shadow-xs"
+                title="Expenses"
+              >
+                <Receipt size={14} className="shrink-0" />
+                <span className="hidden sm:inline">Expenses</span>
               </span>
               <Link
                 href="/loans"
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+                className="flex items-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+                title="Loans"
               >
-                <HandCoins size={13} />
-                <span>Loans</span>
+                <HandCoins size={14} className="shrink-0" />
+                <span className="hidden sm:inline">Loans</span>
               </Link>
             </div>
 
@@ -596,11 +602,11 @@ export default function CostTrackerDashboard() {
               <span>Categories</span>
             </button>
 
-            <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+            <div className="hidden md:flex items-center gap-1.5 rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white">
                 {userName.charAt(0)}
               </span>
-              <span className="hidden xs:inline">{userName}</span>
+              <span>{userName}</span>
             </div>
 
             <button

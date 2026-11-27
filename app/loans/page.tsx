@@ -385,51 +385,57 @@ export default function LoansPage() {
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-28 sm:pb-16">
       {/* Top Mobile-Friendly Navbar with Route Switcher */}
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-3.5 py-3 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white shadow-md shadow-teal-500/20">
-              <HandCoins size={20} />
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2.5 sm:px-6 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white shadow-md shadow-teal-500/20">
+              <HandCoins size={18} />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h1 className="text-sm sm:text-base font-black tracking-tight text-slate-900 truncate">
                   Loan Tracker
                 </h1>
                 {isCloudEnabled && !usingLocalFallback ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[9px] font-bold text-emerald-700">
+                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Cloud Synced
+                    <span>Cloud</span>
+                    <span className="hidden sm:inline">Synced</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[9px] font-bold text-amber-700">
-                    Local
+                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
+                    <span>Local</span>
+                    <span className="hidden sm:inline">Only</span>
                   </span>
                 )}
               </div>
-              <p className="text-[10px] sm:text-[11px] font-medium text-slate-400">
+              <p className="text-[10px] sm:text-[11px] font-medium text-slate-400 truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
                 Lenders & Borrowers • Masum & Toyeeba
               </p>
             </div>
           </div>
 
           {/* Navigation Route Switcher & User Profile */}
-          <div className="flex items-center gap-2">
-            {/* Desktop / Tablet Mode Switcher */}
-            <div className="flex items-center rounded-xl bg-slate-100 p-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Desktop / Tablet & Mobile Balanced Mode Switcher */}
+            <div className="flex items-center rounded-xl bg-slate-100 p-0.5 sm:p-1">
               <Link
                 href="/"
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+                className="flex items-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+                title="Expenses"
               >
-                <Receipt size={13} />
-                <span className="hidden xs:inline">Expenses</span>
+                <Receipt size={14} className="shrink-0" />
+                <span className="hidden sm:inline">Expenses</span>
               </Link>
-              <span className="flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-teal-800 shadow-xs">
-                <HandCoins size={13} />
-                <span>Loans</span>
+              <span
+                className="flex items-center gap-1 sm:gap-1.5 rounded-lg bg-white px-2 sm:px-2.5 py-1 text-xs font-bold text-teal-800 shadow-xs"
+                title="Loans"
+              >
+                <HandCoins size={14} className="shrink-0" />
+                <span className="hidden sm:inline">Loans</span>
               </span>
             </div>
 
-            <div className="hidden sm:flex items-center gap-1.5 rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+            <div className="hidden md:flex items-center gap-1.5 rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white">
                 {userName.charAt(0)}
               </span>
@@ -532,7 +538,7 @@ export default function LoansPage() {
         {/* Filter Bar & Action Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white p-3 sm:p-4 shadow-xs">
           {/* Segmented Filter Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
               type="button"
               onClick={() => setTypeFilter('all')}
@@ -549,8 +555,8 @@ export default function LoansPage() {
               onClick={() => setTypeFilter('lent')}
               className={`rounded-xl px-3 py-1.5 text-xs font-bold transition whitespace-nowrap active:scale-95 ${
                 typeFilter === 'lent'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/25'
+                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 hover:bg-emerald-100'
               }`}
             >
               Borrowers (I Lent)
@@ -560,8 +566,8 @@ export default function LoansPage() {
               onClick={() => setTypeFilter('borrowed')}
               className={`rounded-xl px-3 py-1.5 text-xs font-bold transition whitespace-nowrap active:scale-95 ${
                 typeFilter === 'borrowed'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-rose-600 text-white shadow-xs ring-2 ring-rose-600/25'
+                  : 'bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100'
               }`}
             >
               Lenders (I Borrowed)
@@ -707,6 +713,7 @@ export default function LoansPage() {
         }}
         onSave={handleSaveLoan}
         initialData={editingLoan}
+        defaultType={typeFilter === 'lent' ? 'lent' : 'borrowed'}
       />
 
       {/* Record Repayment Modal */}

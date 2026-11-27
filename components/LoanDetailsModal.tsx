@@ -261,3 +261,4 @@ export function LoanDetailsModal({
     </div>
   );
 }
+

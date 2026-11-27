@@ -180,3 +180,4 @@ export function LoanCard({
     </div>
   );
 }
+

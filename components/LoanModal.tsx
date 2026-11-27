@@ -10,10 +10,11 @@ interface LoanModalProps {
   onClose: () => void;
   onSave: (data: Omit<LoanEntry, 'id' | 'createdAt' | 'paidAmount' | 'status' | 'payments'>) => void;
   initialData?: LoanEntry | null;
+  defaultType?: LoanType;
 }
 
-export function LoanModal({ isOpen, onClose, onSave, initialData }: LoanModalProps) {
-  const [type, setType] = useState<LoanType>('lent');
+export function LoanModal({ isOpen, onClose, onSave, initialData, defaultType = 'borrowed' }: LoanModalProps) {
+  const [type, setType] = useState<LoanType>(initialData?.type || defaultType);
   const [personName, setPersonName] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -31,7 +32,7 @@ export function LoanModal({ isOpen, onClose, onSave, initialData }: LoanModalPro
       setPaymentMethod(initialData.paymentMethod || 'Cash');
       setNote(initialData.note || '');
     } else {
-      setType('lent');
+      setType(defaultType);
       setPersonName('');
       setAmount('');
       setDate(new Date().toISOString().slice(0, 10));
@@ -39,7 +40,7 @@ export function LoanModal({ isOpen, onClose, onSave, initialData }: LoanModalPro
       setPaymentMethod('Cash');
       setNote('');
     }
-  }, [initialData, isOpen]);
+  }, [initialData, defaultType, isOpen]);
 
   if (!isOpen) return null;
 
@@ -99,7 +100,7 @@ export function LoanModal({ isOpen, onClose, onSave, initialData }: LoanModalPro
                 className={`flex items-center justify-center gap-2 rounded-2xl py-3 text-xs sm:text-sm font-bold transition active:scale-98 ${
                   type === 'lent'
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-600 ring-offset-1'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 hover:bg-emerald-100'
                 }`}
               >
                 <ArrowUpRight size={16} />
@@ -112,7 +113,7 @@ export function LoanModal({ isOpen, onClose, onSave, initialData }: LoanModalPro
                 className={`flex items-center justify-center gap-2 rounded-2xl py-3 text-xs sm:text-sm font-bold transition active:scale-98 ${
                   type === 'borrowed'
                     ? 'bg-rose-600 text-white shadow-md shadow-rose-600/25 ring-2 ring-rose-600 ring-offset-1'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100'
                 }`}
               >
                 <ArrowDownLeft size={16} />
@@ -244,3 +245,4 @@ export function LoanModal({ isOpen, onClose, onSave, initialData }: LoanModalPro
     </div>
   );
 }
+
