@@ -1,4 +1,4 @@
-import { ExpenseCategory, ExpenseEntry, SpenderSummary, CategorySummary } from './types';
+import { ExpenseCategory, ExpenseEntry, SpenderSummary, CategorySummary, LoanEntry, LoanSummary } from './types';
 import { MONTHS, DEFAULT_CATEGORIES } from './constants';
 
 export function formatAmount(amount: number | string): string {
@@ -80,5 +80,44 @@ export function buildCategorySummary(
     })
     .filter((c) => c.amount > 0)
     .sort((a, b) => b.amount - a.amount);
+}
+
+export function buildLoanSummary(loans: LoanEntry[]): LoanSummary {
+  let totalLent = 0;
+  let totalLentRemaining = 0;
+  let totalBorrowed = 0;
+  let totalBorrowedRemaining = 0;
+  let activeCount = 0;
+  let settledCount = 0;
+
+  loans.forEach((loan) => {
+    const principal = Number(loan.amount) || 0;
+    const paid = Number(loan.paidAmount) || 0;
+    const remaining = Math.max(0, principal - paid);
+
+    if (loan.type === 'lent') {
+      totalLent += principal;
+      totalLentRemaining += remaining;
+    } else {
+      totalBorrowed += principal;
+      totalBorrowedRemaining += remaining;
+    }
+
+    if (loan.status === 'settled' || remaining === 0) {
+      settledCount += 1;
+    } else {
+      activeCount += 1;
+    }
+  });
+
+  return {
+    totalLent,
+    totalLentRemaining,
+    totalBorrowed,
+    totalBorrowedRemaining,
+    netBalance: totalLentRemaining - totalBorrowedRemaining,
+    activeCount,
+    settledCount,
+  };
 }
 

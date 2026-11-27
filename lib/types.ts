@@ -48,3 +48,38 @@ export interface CategorySummary {
   count: number;
   percentage: number;
 }
+
+export type LoanType = 'lent' | 'borrowed';
+export type LoanStatus = 'active' | 'partial' | 'settled';
+
+export interface LoanPayment {
+  id: string;
+  date: string;
+  amount: number;
+  note?: string;
+}
+
+export interface LoanEntry {
+  id: string;
+  type: LoanType; // 'lent' (Money given to Borrower) | 'borrowed' (Money taken from Lender)
+  personName: string; // Borrower's Name (if lent) or Lender's Name (if borrowed)
+  amount: number; // Principal Amount
+  paidAmount: number; // Total amount returned / paid so far
+  date: string; // YYYY-MM-DD
+  dueDate?: string; // Target repayment date (optional)
+  note?: string;
+  paymentMethod?: string;
+  status: LoanStatus;
+  payments?: LoanPayment[];
+  createdAt: string;
+}
+
+export interface LoanSummary {
+  totalLent: number;
+  totalLentRemaining: number;
+  totalBorrowed: number;
+  totalBorrowedRemaining: number;
+  netBalance: number;
+  activeCount: number;
+  settledCount: number;
+}

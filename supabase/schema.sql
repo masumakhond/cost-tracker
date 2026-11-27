@@ -60,3 +60,30 @@ create policy "Allow all operations on expense_categories"
   using (true)
   with check (true);
 
+-- 5. Create table for Loan / Debt Entries
+create table if not exists public.loan_entries (
+  id text primary key,
+  type text not null default 'lent', -- 'lent' (Money given to Borrower) | 'borrowed' (Money taken from Lender)
+  person_name text not null,
+  amount numeric(12, 2) not null default 0,
+  paid_amount numeric(12, 2) not null default 0,
+  date text not null,
+  due_date text default '',
+  payment_method text default 'Cash',
+  note text default '',
+  status text not null default 'active', -- 'active', 'partial', 'settled'
+  payments jsonb default '[]'::jsonb,
+  created_at timestamptz default now() not null
+);
+
+create index if not exists idx_loans_type on public.loan_entries(type);
+create index if not exists idx_loans_status on public.loan_entries(status);
+
+alter table public.loan_entries enable row level security;
+
+create policy "Allow all operations on loan_entries"
+  on public.loan_entries for all
+  using (true)
+  with check (true);
+
+

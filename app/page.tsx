@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import {
   CreditCard,
   Plus,
@@ -22,6 +23,7 @@ import {
   PieChart,
   Target,
   Sparkles,
+  HandCoins,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -569,6 +571,21 @@ export default function CostTrackerDashboard() {
 
           {/* User Profile & Quick Actions */}
           <div className="flex items-center gap-2">
+            {/* Mode Switcher: Expenses vs Loans */}
+            <div className="flex items-center rounded-xl bg-slate-100 p-1">
+              <span className="flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-teal-800 shadow-xs">
+                <Receipt size={13} />
+                <span className="hidden xs:inline">Expenses</span>
+              </span>
+              <Link
+                href="/loans"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+              >
+                <HandCoins size={13} />
+                <span>Loans</span>
+              </Link>
+            </div>
+
             <button
               type="button"
               onClick={() => setIsCategoryModalOpen(true)}

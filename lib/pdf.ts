@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ExpenseEntry, ExpenseCategory, SpenderSummary } from './types';
+import { ExpenseEntry, ExpenseCategory, SpenderSummary, LoanEntry } from './types';
 import { monthLabel, buildSpenderSummary, buildCategorySummary } from './utils';
 import { DEFAULT_CATEGORIES } from './constants';
 
@@ -249,4 +249,103 @@ export function downloadAnnualCostPdf(
   });
 
   doc.save(`annual-cost-statement-${year}.pdf`);
+}
+
+export function downloadLoanStatementPdf(loans: LoanEntry[]) {
+  const doc = new jsPDF();
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  // Header Title
+  doc.setFontSize(18);
+  doc.setTextColor(15, 118, 110);
+  doc.text('Loan & Debt Statement', 14, 18);
+
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Generated on: ${todayStr} | Masum & Toyeeba Personal Finance`, 14, 25);
+
+  const lentLoans = loans.filter((l) => l.type === 'lent');
+  const borrowedLoans = loans.filter((l) => l.type === 'borrowed');
+
+  const totalLent = lentLoans.reduce((s, l) => s + l.amount, 0);
+  const totalLentPaid = lentLoans.reduce((s, l) => s + (l.paidAmount || 0), 0);
+  const totalLentRemaining = Math.max(0, totalLent - totalLentPaid);
+
+  const totalBorrowed = borrowedLoans.reduce((s, l) => s + l.amount, 0);
+  const totalBorrowedPaid = borrowedLoans.reduce((s, l) => s + (l.paidAmount || 0), 0);
+  const totalBorrowedRemaining = Math.max(0, totalBorrowed - totalBorrowedPaid);
+
+  // Summary box
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 30, 182, 22, 3, 3, 'F');
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 30, 182, 22, 3, 3, 'S');
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(15, 118, 110);
+  doc.text(`Total Lent (To Receive): ${formatPdfMoney(totalLentRemaining)}`, 20, 39);
+  doc.setTextColor(225, 29, 72);
+  doc.text(`Total Borrowed (To Pay): ${formatPdfMoney(totalBorrowedRemaining)}`, 20, 47);
+
+  const net = totalLentRemaining - totalBorrowedRemaining;
+  doc.setTextColor(net >= 0 ? 15 : 225, net >= 0 ? 118 : 29, net >= 0 ? 110 : 72);
+  doc.text(`Net Position: ${net >= 0 ? '+' : ''}${formatPdfMoney(net)}`, 120, 43);
+
+  let currentY = 60;
+
+  // Section 1: Money Lent (Borrowers)
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(15, 118, 110);
+  doc.text(`1. Money Lent to Borrowers (Total: ${formatPdfMoney(totalLent)})`, 14, currentY);
+
+  const lentRows = lentLoans.map((l) => [
+    l.date,
+    cleanTextForPdf(l.personName),
+    formatPdfMoney(l.amount),
+    formatPdfMoney(l.paidAmount || 0),
+    formatPdfMoney(Math.max(0, l.amount - (l.paidAmount || 0))),
+    l.status.toUpperCase(),
+    cleanTextForPdf(l.note || '-'),
+  ]);
+
+  autoTable(doc, {
+    startY: currentY + 3,
+    head: [['Date', "Borrower's Name", 'Amount', 'Returned', 'Due', 'Status', 'Note']],
+    body: lentRows.length > 0 ? lentRows : [['-', 'No lent records', '-', '-', '-', '-', '-']],
+    theme: 'striped',
+    headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+    styles: { fontSize: 7.5, cellPadding: 2, font: 'helvetica' },
+  });
+
+  // Section 2: Money Borrowed (Lenders)
+  const lastTable = (doc as any).lastAutoTable;
+  currentY = (lastTable ? lastTable.finalY : currentY) + 12;
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(225, 29, 72);
+  doc.text(`2. Money Borrowed from Lenders (Total: ${formatPdfMoney(totalBorrowed)})`, 14, currentY);
+
+  const borrowedRows = borrowedLoans.map((l) => [
+    l.date,
+    cleanTextForPdf(l.personName),
+    formatPdfMoney(l.amount),
+    formatPdfMoney(l.paidAmount || 0),
+    formatPdfMoney(Math.max(0, l.amount - (l.paidAmount || 0))),
+    l.status.toUpperCase(),
+    cleanTextForPdf(l.note || '-'),
+  ]);
+
+  autoTable(doc, {
+    startY: currentY + 3,
+    head: [['Date', "Lender's Name", 'Amount', 'Repaid', 'Due', 'Status', 'Note']],
+    body: borrowedRows.length > 0 ? borrowedRows : [['-', 'No borrowed records', '-', '-', '-', '-', '-']],
+    theme: 'striped',
+    headStyles: { fillColor: [190, 24, 93], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+    styles: { fontSize: 7.5, cellPadding: 2, font: 'helvetica' },
+  });
+
+  doc.save(`loan-statement-${todayStr}.pdf`);
 }
