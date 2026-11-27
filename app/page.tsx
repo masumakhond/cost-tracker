@@ -572,23 +572,23 @@ export default function CostTrackerDashboard() {
           </div>
 
           {/* User Profile & Quick Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {/* Mode Switcher: Expenses vs Loans */}
-            <div className="flex items-center rounded-xl bg-slate-100 p-0.5 sm:p-1">
+            <div className="flex items-center rounded-2xl bg-slate-100 p-1 border border-slate-200/60 shadow-xs">
               <span
-                className="flex items-center gap-1 sm:gap-1.5 rounded-lg bg-white px-2 sm:px-2.5 py-1 text-xs font-bold text-teal-800 shadow-xs"
-                title="Expenses"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-white px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-teal-800 shadow-xs ring-1 ring-slate-900/5 transition min-h-[38px] sm:min-h-[40px]"
+                title="Expenses Ledger"
               >
-                <Receipt size={14} className="shrink-0" />
-                <span className="hidden sm:inline">Expenses</span>
+                <Receipt size={18} className="shrink-0 text-teal-700" strokeWidth={2.4} />
+                <span className="hidden min-[420px]:inline">Expenses</span>
               </span>
               <Link
                 href="/loans"
-                className="flex items-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
-                title="Loans"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-white/60 active:scale-95 transition min-h-[38px] sm:min-h-[40px]"
+                title="Loans Tracker"
               >
-                <HandCoins size={14} className="shrink-0" />
-                <span className="hidden sm:inline">Loans</span>
+                <HandCoins size={18} className="shrink-0 text-slate-500" strokeWidth={2} />
+                <span className="hidden min-[420px]:inline">Loans</span>
               </Link>
             </div>
 

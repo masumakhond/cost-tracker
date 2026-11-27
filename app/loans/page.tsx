@@ -22,6 +22,9 @@ import {
   PieChart,
   SlidersHorizontal,
   ArrowLeftRight,
+  AlertCircle,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { LoanEntry, LoanPayment, LoanType, LoanStatus } from '@/lib/types';
@@ -106,6 +109,7 @@ export default function LoansPage() {
 
   const [detailsLoan, setDetailsLoan] = useState<LoanEntry | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
 
   // Load user profile
   useEffect(() => {
@@ -127,7 +131,7 @@ export default function LoansPage() {
         .order('date', { ascending: false });
 
       if (!error && data) {
-        const formatted: LoanEntry[] = data.map((item: any) => ({
+        let formatted: LoanEntry[] = data.map((item: any) => ({
           id: String(item.id),
           type: item.type as LoanType,
           personName: String(item.person_name),
@@ -141,12 +145,46 @@ export default function LoansPage() {
           payments: Array.isArray(item.payments) ? item.payments : [],
           createdAt: item.created_at || new Date().toISOString(),
         }));
+
+        // Auto-migration: check if there are local-only loans that haven't been pushed to Supabase yet
+        const saved = localStorage.getItem(STORAGE_LOANS);
+        if (saved) {
+          try {
+            const localList: LoanEntry[] = JSON.parse(saved);
+            const nonSample = localList.filter((l) => !l.id.startsWith('loan-sample-'));
+            const cloudIds = new Set(formatted.map((f) => f.id));
+            const unsynced = nonSample.filter((l) => !cloudIds.has(l.id));
+
+            if (unsynced.length > 0) {
+              for (const l of unsynced) {
+                await supabase.from('loan_entries').upsert({
+                  id: l.id,
+                  type: l.type,
+                  person_name: l.personName,
+                  amount: l.amount,
+                  paid_amount: l.paidAmount || 0,
+                  date: l.date,
+                  due_date: l.dueDate || '',
+                  payment_method: l.paymentMethod || 'Cash',
+                  note: l.note || '',
+                  status: l.status || 'active',
+                  payments: l.payments || [],
+                });
+              }
+              formatted = [...unsynced, ...formatted];
+            }
+          } catch {}
+        }
+
         setLoans(formatted);
         localStorage.setItem(STORAGE_LOANS, JSON.stringify(formatted));
         setUsingLocalFallback(false);
+      } else {
+        setUsingLocalFallback(true);
       }
     } catch (e) {
       console.error('Cloud loans fetch failed:', e);
+      setUsingLocalFallback(true);
     }
   };
 
@@ -170,32 +208,7 @@ export default function LoansPage() {
 
       // Check cloud
       if (isCloudEnabled && supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('loan_entries')
-            .select('*')
-            .order('date', { ascending: false });
-
-          if (!error && data) {
-            const formatted: LoanEntry[] = data.map((item: any) => ({
-              id: String(item.id),
-              type: item.type as LoanType,
-              personName: String(item.person_name),
-              amount: Number(item.amount) || 0,
-              paidAmount: Number(item.paid_amount) || 0,
-              date: String(item.date).slice(0, 10),
-              dueDate: item.due_date ? String(item.due_date).slice(0, 10) : undefined,
-              paymentMethod: item.payment_method ? String(item.payment_method) : undefined,
-              note: item.note ? String(item.note) : undefined,
-              status: item.status || 'active',
-              payments: Array.isArray(item.payments) ? item.payments : [],
-              createdAt: item.created_at || new Date().toISOString(),
-            }));
-            setLoans(formatted);
-            localStorage.setItem(STORAGE_LOANS, JSON.stringify(formatted));
-            setUsingLocalFallback(false);
-          }
-        } catch {}
+        await fetchCloudLoans();
       }
     };
 
@@ -415,23 +428,23 @@ export default function LoansPage() {
           </div>
 
           {/* Navigation Route Switcher & User Profile */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {/* Desktop / Tablet & Mobile Balanced Mode Switcher */}
-            <div className="flex items-center rounded-xl bg-slate-100 p-0.5 sm:p-1">
+            <div className="flex items-center rounded-2xl bg-slate-100 p-1 border border-slate-200/60 shadow-xs">
               <Link
                 href="/"
-                className="flex items-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
-                title="Expenses"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-white/60 active:scale-95 transition min-h-[38px] sm:min-h-[40px]"
+                title="Expenses Ledger"
               >
-                <Receipt size={14} className="shrink-0" />
-                <span className="hidden sm:inline">Expenses</span>
+                <Receipt size={18} className="shrink-0 text-slate-500" strokeWidth={2} />
+                <span className="hidden min-[420px]:inline">Expenses</span>
               </Link>
               <span
-                className="flex items-center gap-1 sm:gap-1.5 rounded-lg bg-white px-2 sm:px-2.5 py-1 text-xs font-bold text-teal-800 shadow-xs"
-                title="Loans"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-white px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-teal-800 shadow-xs ring-1 ring-slate-900/5 transition min-h-[38px] sm:min-h-[40px]"
+                title="Loans Tracker"
               >
-                <HandCoins size={14} className="shrink-0" />
-                <span className="hidden sm:inline">Loans</span>
+                <HandCoins size={18} className="shrink-0 text-teal-700" strokeWidth={2.4} />
+                <span className="hidden min-[420px]:inline">Loans</span>
               </span>
             </div>
 
@@ -456,6 +469,75 @@ export default function LoansPage() {
 
       {/* Main Container */}
       <main className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Supabase Cloud Sync Pending Notice */}
+        {usingLocalFallback && isCloudEnabled && (
+          <div className="rounded-2xl border border-amber-200/90 bg-amber-50/90 p-3.5 sm:p-4 text-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white mt-0.5">
+                <AlertCircle size={18} />
+              </div>
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-amber-950">
+                  Supabase Cloud Sync Pending for Loans
+                </h4>
+                <p className="text-[11px] sm:text-xs text-amber-800 mt-0.5">
+                  The <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono font-bold">loan_entries</code> table hasn&apos;t been created in your Supabase project yet. Data is currently saved to this device only. Run the SQL schema once in Supabase SQL Editor to enable real-time sync across mobile &amp; laptop.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const sql = `-- ==============================================================================
+-- Run this in your Supabase Project: SQL Editor -> New Query -> Run
+-- ==============================================================================
+
+create table if not exists public.loan_entries (
+  id text primary key,
+  type text not null default 'lent',
+  person_name text not null,
+  amount numeric(12, 2) not null default 0,
+  paid_amount numeric(12, 2) not null default 0,
+  date text not null,
+  due_date text default '',
+  payment_method text default 'Cash',
+  note text default '',
+  status text not null default 'active',
+  payments jsonb default '[]'::jsonb,
+  created_at timestamptz default now() not null
+);
+
+create index if not exists idx_loans_type on public.loan_entries(type);
+create index if not exists idx_loans_status on public.loan_entries(status);
+
+alter table public.loan_entries enable row level security;
+
+create policy "Allow all operations on loan_entries"
+  on public.loan_entries for all
+  using (true)
+  with check (true);
+
+alter publication supabase_realtime add table public.loan_entries;`;
+                navigator.clipboard.writeText(sql);
+                setCopiedSql(true);
+                setTimeout(() => setCopiedSql(false), 3000);
+              }}
+              className="shrink-0 flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700 active:scale-95 transition"
+            >
+              {copiedSql ? (
+                <>
+                  <Check size={14} className="text-white" />
+                  <span>Copied to Clipboard!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={14} />
+                  <span>Copy SQL Script</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
         {/* KPI Summary Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {/* Card 1: Total Lent (To Receive from Borrowers / পাওনা) */}

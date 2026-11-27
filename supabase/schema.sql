@@ -86,4 +86,7 @@ create policy "Allow all operations on loan_entries"
   using (true)
   with check (true);
 
+-- 6. Enable Realtime broadcast replication for instant mobile <-> laptop sync
+alter publication supabase_realtime add table public.loan_entries;
+
 
