@@ -76,7 +76,7 @@ export function LoanDetailsModal({
           <div className="flex items-center justify-between mb-2">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Remaining Due
+                {isLent ? 'Remaining to Receive' : 'Remaining to Pay'}
               </span>
               <p className={`text-2xl font-black ${isSettled ? 'text-slate-400 line-through' : isLent ? 'text-emerald-700' : 'text-rose-700'}`}>
                 {formatAmount(remaining)}
@@ -98,7 +98,7 @@ export function LoanDetailsModal({
                 ) : (
                   <>
                     <Clock size={13} className="text-amber-600" />
-                    <span>{paid > 0 ? 'Partial' : 'Pending'}</span>
+                    <span>{paid > 0 ? (isLent ? 'Partially Received' : 'Partially Repaid') : 'Pending'}</span>
                   </>
                 )}
               </span>
@@ -108,7 +108,7 @@ export function LoanDetailsModal({
           {/* Progress bar */}
           <div className="mt-3">
             <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1">
-              <span>Repaid: {formatAmount(paid)}</span>
+              <span>{isLent ? 'Received' : 'Repaid'}: {formatAmount(paid)}</span>
               <span>Total: {formatAmount(principal)} ({percent}%)</span>
             </div>
             <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
@@ -167,7 +167,7 @@ export function LoanDetailsModal({
         <div className="mt-4 pt-3 border-t border-slate-100">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Payment History ({loan.payments?.length || 0})
+              {isLent ? 'Received / Collections' : 'Repayment History'} ({loan.payments?.length || 0})
             </span>
             {!isSettled && (
               <button
@@ -176,10 +176,12 @@ export function LoanDetailsModal({
                   onClose();
                   onOpenPaymentModal(loan);
                 }}
-                className="text-[11px] font-bold text-teal-600 hover:text-teal-700 hover:underline flex items-center gap-1"
+                className={`text-[11px] font-bold hover:underline flex items-center gap-1 ${
+                  isLent ? 'text-emerald-600 hover:text-emerald-700' : 'text-rose-600 hover:text-rose-700'
+                }`}
               >
                 <Plus size={12} />
-                <span>Record Payment</span>
+                <span>{isLent ? 'Record Received' : 'Record Repayment'}</span>
               </button>
             )}
           </div>
@@ -195,13 +197,15 @@ export function LoanDetailsModal({
                     <span className="font-mono text-[10px] text-slate-400 block">{p.date}</span>
                     {p.note && <span className="text-slate-600 text-[11px]">{p.note}</span>}
                   </div>
-                  <span className="font-extrabold text-teal-700">+{formatAmount(p.amount)}</span>
+                  <span className={`font-extrabold ${isLent ? 'text-emerald-700' : 'text-teal-700'}`}>
+                    +{formatAmount(p.amount)}
+                  </span>
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-center py-3 text-xs text-slate-400 italic bg-slate-50 rounded-xl">
-              No repayment records yet.
+              {isLent ? 'No received records yet.' : 'No repayment records yet.'}
             </p>
           )}
         </div>
@@ -242,10 +246,14 @@ export function LoanDetailsModal({
                 onClose();
                 onOpenPaymentModal(loan);
               }}
-              className="flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-teal-600/25 hover:bg-teal-700 transition active:scale-95"
+              className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-md transition active:scale-95 ${
+                isLent
+                  ? 'bg-emerald-600 shadow-emerald-600/25 hover:bg-emerald-700'
+                  : 'bg-rose-600 shadow-rose-600/25 hover:bg-rose-700'
+              }`}
             >
               <Plus size={14} />
-              <span>+ Record Payment</span>
+              <span>{isLent ? '+ Record Received' : '+ Record Repayment'}</span>
             </button>
           ) : (
             <button

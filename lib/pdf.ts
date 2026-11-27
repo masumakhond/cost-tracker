@@ -312,7 +312,7 @@ export function downloadLoanStatementPdf(loans: LoanEntry[]) {
 
   autoTable(doc, {
     startY: currentY + 3,
-    head: [['Date', "Borrower's Name", 'Amount', 'Returned', 'Due', 'Status', 'Note']],
+    head: [['Date', "Borrower's Name", 'Lent Amount', 'Received', 'Remaining Due', 'Status', 'Note']],
     body: lentRows.length > 0 ? lentRows : [['-', 'No lent records', '-', '-', '-', '-', '-']],
     theme: 'striped',
     headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
@@ -340,7 +340,7 @@ export function downloadLoanStatementPdf(loans: LoanEntry[]) {
 
   autoTable(doc, {
     startY: currentY + 3,
-    head: [['Date', "Lender's Name", 'Amount', 'Repaid', 'Due', 'Status', 'Note']],
+    head: [['Date', "Lender's Name", 'Borrowed Amount', 'Repaid', 'Remaining Debt', 'Status', 'Note']],
     body: borrowedRows.length > 0 ? borrowedRows : [['-', 'No borrowed records', '-', '-', '-', '-', '-']],
     theme: 'striped',
     headStyles: { fillColor: [190, 24, 93], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },

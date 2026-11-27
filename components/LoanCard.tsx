@@ -68,8 +68,12 @@ export function LoanCard({
                 <span>Settled</span>
               </span>
             ) : paid > 0 ? (
-              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
-                {percent}% Paid
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold border ${
+                isLent
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}>
+                {percent}% {isLent ? 'Received' : 'Paid'}
               </span>
             ) : null}
           </div>
@@ -95,7 +99,7 @@ export function LoanCard({
         {/* Right: Amounts */}
         <div className="text-right flex-shrink-0">
           <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {isSettled ? 'Paid Off' : 'Remaining Due'}
+            {isSettled ? (isLent ? 'Fully Received' : 'Paid Off') : isLent ? 'To Receive' : 'To Pay'}
           </span>
           <span
             className={`text-sm sm:text-base font-black tracking-tight ${
@@ -128,19 +132,23 @@ export function LoanCard({
 
       {/* Bottom Footer Actions */}
       <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
-        {/* Left: Quick Payment button */}
+        {/* Left: Quick Action button: Receive for Lent, Repay for Borrowed */}
         {!isSettled ? (
           <button
             type="button"
             onClick={() => onOpenPayment(loan)}
-            className="flex items-center gap-1 rounded-xl bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800 hover:bg-teal-100 transition active:scale-95"
+            className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold transition active:scale-95 ${
+              isLent
+                ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                : 'bg-rose-50 text-rose-800 hover:bg-rose-100'
+            }`}
           >
-            <Plus size={13} className="text-teal-700" />
-            <span>+ Payment</span>
+            <Plus size={13} className={isLent ? 'text-emerald-700' : 'text-rose-700'} />
+            <span>{isLent ? '+ Receive' : '+ Repay'}</span>
           </button>
         ) : (
           <span className="text-[11px] font-medium text-slate-400 italic">
-            Closed on time
+            {isLent ? 'Fully collected' : 'Fully repaid'}
           </span>
         )}
 

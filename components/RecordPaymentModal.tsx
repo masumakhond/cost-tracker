@@ -30,7 +30,8 @@ export function RecordPaymentModal({
   const remaining = Math.max(0, principal - currentPaid);
 
   const isLent = loan.type === 'lent'; // Money I gave, now receiving back
-  const titleText = isLent ? 'Record Payment Received' : 'Record Repayment Made';
+  const titleText = isLent ? 'Record Received Amount' : 'Record Repayment Made';
+  const subtitleText = isLent ? `Received from ${loan.personName}` : `Paid to ${loan.personName}`;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +65,7 @@ export function RecordPaymentModal({
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-bold text-slate-900">{titleText}</h3>
-              <p className="text-[11px] text-slate-400 font-medium">{loan.personName}</p>
+              <p className="text-[11px] text-slate-400 font-medium">{subtitleText}</p>
             </div>
           </div>
           <button
@@ -83,8 +84,12 @@ export function RecordPaymentModal({
             <span className="font-bold text-slate-700">{formatAmount(principal)}</span>
           </div>
           <div className="text-right">
-            <span className="text-slate-400 block text-[10px] font-bold uppercase">Remaining Due</span>
-            <span className="font-extrabold text-slate-900 text-sm">{formatAmount(remaining)}</span>
+            <span className="text-slate-400 block text-[10px] font-bold uppercase">
+              {isLent ? 'Remaining to Receive' : 'Remaining to Pay'}
+            </span>
+            <span className={`font-extrabold text-sm ${isLent ? 'text-emerald-700' : 'text-rose-700'}`}>
+              {formatAmount(remaining)}
+            </span>
           </div>
         </div>
 
@@ -92,7 +97,7 @@ export function RecordPaymentModal({
           {/* Payment Amount */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
-              Payment Amount (৳) *
+              {isLent ? 'Received Amount (৳) *' : 'Repayment Amount (৳) *'}
             </label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-base text-slate-400">৳</span>
@@ -121,9 +126,11 @@ export function RecordPaymentModal({
                   setPaymentAmount(String(remaining));
                   setMarkSettled(true);
                 }}
-                className="text-[10px] font-bold text-teal-600 hover:text-teal-700 hover:underline"
+                className={`text-[10px] font-bold hover:underline ${
+                  isLent ? 'text-emerald-600 hover:text-emerald-700' : 'text-rose-600 hover:text-rose-700'
+                }`}
               >
-                Pay Full Remaining ({formatAmount(remaining)})
+                {isLent ? 'Receive Full Remaining' : 'Pay Full Remaining'} ({formatAmount(remaining)})
               </button>
             </div>
           </div>
@@ -131,7 +138,7 @@ export function RecordPaymentModal({
           {/* Payment Date */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
-              Payment Date *
+              {isLent ? 'Received Date *' : 'Payment Date *'}
             </label>
             <input
               type="date"
@@ -151,7 +158,7 @@ export function RecordPaymentModal({
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. 1st installment, paid via bKash..."
+              placeholder={isLent ? 'e.g. Received via bKash, cash handover...' : 'e.g. 1st installment, paid via bKash...'}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-800 outline-none focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100 transition"
             />
           </div>
@@ -164,7 +171,7 @@ export function RecordPaymentModal({
               onChange={(e) => setMarkSettled(e.target.checked)}
               className="h-4 w-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300"
             />
-            <span>Mark loan as fully settled / closed</span>
+            <span>{isLent ? 'Mark loan as fully received / settled' : 'Mark loan as fully paid / settled'}</span>
           </label>
 
           {/* Buttons */}
@@ -178,10 +185,14 @@ export function RecordPaymentModal({
             </button>
             <button
               type="submit"
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-teal-600 py-2.5 text-xs font-bold text-white shadow-md shadow-teal-600/25 hover:bg-teal-700 transition active:scale-95"
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white shadow-md transition active:scale-95 ${
+                isLent
+                  ? 'bg-emerald-600 shadow-emerald-600/25 hover:bg-emerald-700'
+                  : 'bg-rose-600 shadow-rose-600/25 hover:bg-rose-700'
+              }`}
             >
               <Check size={16} />
-              <span>Confirm Payment</span>
+              <span>{isLent ? 'Confirm Received Amount' : 'Confirm Repayment'}</span>
             </button>
           </div>
         </form>
